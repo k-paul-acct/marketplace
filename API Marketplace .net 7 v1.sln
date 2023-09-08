@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34024.191
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API Marketplace .net 7 v1", "API Marketplace .net 7 v1.csproj", "{7CCA2FE6-C856-4445-95E0-70B638F9E4A3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7CCA2FE6-C856-4445-95E0-70B638F9E4A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CCA2FE6-C856-4445-95E0-70B638F9E4A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CCA2FE6-C856-4445-95E0-70B638F9E4A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CCA2FE6-C856-4445-95E0-70B638F9E4A3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D153FF36-E915-4D1B-8904-7F2E239E8BE8}
+	EndGlobalSection
+EndGlobal
