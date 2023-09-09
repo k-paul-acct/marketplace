@@ -25,6 +25,8 @@ public partial class MarketplaceDbContext : DbContext
 
     public virtual DbSet<Review> Reviews { get; set; }
 
+    public virtual DbSet<Role> Roles { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<Wishlist> Wishlists { get; set; }
@@ -117,6 +119,15 @@ public partial class MarketplaceDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_User_Review");
+        });
+
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasNoKey();
+
+            entity.Property(e => e.RoleName)
+                .HasMaxLength(30)
+                .IsFixedLength();
         });
 
         modelBuilder.Entity<User>(entity =>
