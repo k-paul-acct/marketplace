@@ -1,10 +1,11 @@
 ﻿using API_Marketplace_.net_7_v1.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace API_Marketplace_.net_7_v1.Controllers
 {
-    public class UserAPIHandler
+    public partial class UserAPIHandler
     {
         public static async Task CreateUserAsync(HttpContext context, MarketplaceDbContext dbContext)
         {
@@ -31,8 +32,45 @@ namespace API_Marketplace_.net_7_v1.Controllers
                 await context.Response.WriteAsync("Invalid JSON data.");
             }
         }
+        public static async Task<string> AuthenticateUserAsync(HttpContext context, MarketplaceDbContext dbContext)
+        {
+            // Читаем JSON-тело запроса
+            using var reader = new StreamReader(context.Request.Body);
+            var jsonBody = await reader.ReadToEndAsync();
 
-        public static async Task DeleteUserAsync(HttpContext context, MarketplaceDbContext dbContext)
+            try
+            {
+                // Десериализуем JSON в объект для аутентификации
+                var authRequest = JsonSerializer.Deserialize<AuthenticationRequest>(jsonBody);
+
+                // Находим пользователя по Email
+                var user = await dbContext.Users
+                    .FirstOrDefaultAsync(u => u.Email == authRequest.Email);
+
+                if (user != null && user.PasswordHash == authRequest.PasswordHash)
+                {
+                    // Пользователь аутентифицирован, возвращаем его данные
+                    var responseJson = JsonSerializer.Serialize(user);
+                    context.Response.StatusCode = 200; // OK
+                    return responseJson;
+                }
+                else
+                {
+                    // Неправильные учетные данные
+                    context.Response.StatusCode = 401; // Unauthorized
+                    return ("Authentication failed.");
+                }
+            }
+            catch (JsonException)
+            {
+                // Ошибка в формате JSON-данных, возвращаем ошибку
+                context.Response.StatusCode = 400; // Bad Request
+                return "Invalid JSON data.";
+            }
+        }
+
+
+        public static async Task DeleteUserByIDAsync(HttpContext context, MarketplaceDbContext dbContext)
         {
             if (context.Request.RouteValues["userId"] is string userIdStr && int.TryParse(userIdStr, out int userId))
             {
@@ -60,7 +98,7 @@ namespace API_Marketplace_.net_7_v1.Controllers
             }
         }
 
-        public static async Task GetUserAsync(HttpContext context, MarketplaceDbContext dbContext)
+        public static async Task GetUserByIDAsync(HttpContext context, MarketplaceDbContext dbContext)
         {
             if (context.Request.RouteValues["userId"] is string userIdStr && int.TryParse(userIdStr, out int userId))
             {

@@ -118,7 +118,7 @@ namespace API_Marketplace_.net_7_v1.Controllers
             }
         }
 
-        public static async Task DeleteProductAsync(HttpContext context, MarketplaceDbContext dbContext)
+        public static async Task DeleteProductByIDAsync(HttpContext context, MarketplaceDbContext dbContext)
         {
             if (context.Request.RouteValues["productId"] is string productIdStr && int.TryParse(productIdStr, out int productId))
             {
