@@ -101,4 +101,21 @@ app.MapPost("/api/orderitem/updatebyid/{orderItemId}", async (MarketplaceDbConte
 app.MapGet("/api/orderitem/getall", async (HttpContext context) =>
     await context.Response.WriteAsJsonAsync(await OrderItemAPIHandler.GetAllOrderItemsAsync()));
 
+
+// Reviews
+app.MapPost("/api/review/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await ReviewAPIHandler.CreateReviewAsync(context, dbContext));
+
+app.MapGet("/api/review/deletebyid/{reviewId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await ReviewAPIHandler.DeleteReviewByIdAsync(context, dbContext));
+
+app.MapGet("/api/review/getbyid/{reviewId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await ReviewAPIHandler.GetReviewAsync(context, dbContext));
+
+app.MapPost("/api/review/updatebyid/{reviewId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await ReviewAPIHandler.UpdateReviewAsync(context, dbContext));
+
+app.MapGet("/api/review/getall", async (HttpContext context) =>
+    await context.Response.WriteAsJsonAsync(await ReviewAPIHandler.GetAllReviewsAsync()));
+
 app.Run();
