@@ -118,4 +118,55 @@ app.MapPost("/api/review/updatebyid/{reviewId}", async (MarketplaceDbContext dbC
 app.MapGet("/api/review/getall", async (HttpContext context) =>
     await context.Response.WriteAsJsonAsync(await ReviewAPIHandler.GetAllReviewsAsync()));
 
+
+// Categories
+app.MapPost("/api/category/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await CategoryAPIHandler.CreateCategoryAsync(context, dbContext));
+
+app.MapGet("/api/category/getbyid/{categoryId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await CategoryAPIHandler.GetCategoryAsync(context, dbContext));
+
+app.MapPost("/api/category/updatebyid/{categoryId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await CategoryAPIHandler.UpdateCategoryAsync(context, dbContext));
+
+app.MapGet("/api/category/deletebyid/{categoryId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await CategoryAPIHandler.DeleteCategoryByIDAsync(context, dbContext));
+
+app.MapGet("/api/category/getall", async (HttpContext context) =>
+    await context.Response.WriteAsJsonAsync(await CategoryAPIHandler.GetAllCategoriesAsync()));
+
+// Wishlists
+app.MapPost("/api/wishlist/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await WishlistAPIHandler.CreateWishlistAsync(context, dbContext));
+
+app.MapGet("/api/wishlist/getbyid/{wishlistId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await WishlistAPIHandler.GetWishlistAsync(context, dbContext));
+
+app.MapPost("/api/wishlist/updatebyid/{wishlistId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await WishlistAPIHandler.UpdateWishlistAsync(context, dbContext));
+
+app.MapGet("/api/wishlist/deletebyid/{wishlistId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await WishlistAPIHandler.DeleteWishlistByIDAsync(context, dbContext));
+
+app.MapGet("/api/wishlist/getall", async (HttpContext context) =>
+    await context.Response.WriteAsJsonAsync(await WishlistAPIHandler.GetAllWishlistsAsync()));
+
+
+// Roles
+app.MapPost("/api/role/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await RoleAPIHandler.CreateRoleAsync(context, dbContext));
+
+app.MapGet("/api/role/getbyid/{roleId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await RoleAPIHandler.GetRoleAsync(context, dbContext));
+
+app.MapPost("/api/role/updatebyid/{roleId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await RoleAPIHandler.UpdateRoleAsync(context, dbContext));
+
+app.MapGet("/api/role/deletebyid/{roleId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+    await RoleAPIHandler.DeleteRoleByIDAsync(context, dbContext));
+
+app.MapGet("/api/role/getall", async (HttpContext context) =>
+    await context.Response.WriteAsJsonAsync(await RoleAPIHandler.GetAllRolesAsync()));
+
+
 app.Run();
