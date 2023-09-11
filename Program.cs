@@ -16,7 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://localhost:8080"); 
 builder.Services.AddDbContext<MarketplaceDbContext>(options =>
 {
-    options.UseSqlServer("Server=DESKTOP-L57VS11;Database=master;Trusted_Connection=True;"); // Замените на вашу строку подключения
+    options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=master;Trusted_Connection=True;"); // Замените на вашу строку подключения
 });
 
 var app = builder.Build();
@@ -75,6 +75,32 @@ app.MapPost("/api/product/updatebyid/{productId}", async (MarketplaceDbContext d
 app.MapGet("/api/product/getall", async (HttpContext context) =>
 {
     await context.Response.WriteAsJsonAsync(await ProductAPIHandler.GetAllProductsAsync());
+});
+
+
+//Orders
+app.MapPost("/api/order/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
+{
+    await OrderAPIHandler.CreateOrderAsync(context, dbContext);
+});
+
+app.MapGet("/api/order/deletebyid/{orderId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+{
+    await OrderAPIHandler.CreateOrderAsync(context, dbContext);
+});
+
+app.MapGet("/api/order/getbyid/{orderId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+{
+    await OrderAPIHandler.CreateOrderAsync(context, dbContext);
+});
+
+app.MapPost("/api/order/updatebyid/{orderId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+{
+    await OrderAPIHandler.CreateOrderAsync(context, dbContext);
+});
+app.MapGet("/api/order/getall", async (HttpContext context) =>
+{
+    await context.Response.WriteAsJsonAsync(await OrderAPIHandler.GetAllOrdersAsync());
 });
 
 app.Run();
