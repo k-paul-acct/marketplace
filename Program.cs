@@ -16,7 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://localhost:8080"); 
 builder.Services.AddDbContext<MarketplaceDbContext>(options =>
 {
-    options.UseSqlServer("Server=DESKTOP-L57VS11;Database=master;Trusted_Connection=True;"); // Замените на вашу строку подключения
+    options.UseSqlServer("Server=DESKTOP-L57VS11;Database=MarketplaceDB;Trusted_Connection=True;"); // Замените на вашу строку подключения
 });
 
 var app = builder.Build();
@@ -24,57 +24,38 @@ var app = builder.Build();
 
 // Users
 app.MapPost("/api/user/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
-{
-    await UserAPIHandler.CreateUserAsync(context, dbContext);
-});
+    await UserAPIHandler.CreateUserAsync(context, dbContext));
 
 app.MapGet("/api/user/deletebyid/{userId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-{
-    await UserAPIHandler.DeleteUserByIDAsync(context, dbContext);
-});
+    await UserAPIHandler.DeleteUserByIDAsync(context, dbContext));
 
 app.MapGet("/api/user/getbyid/{userId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-{
-    await UserAPIHandler.GetUserByIDAsync(context, dbContext);
-});
+    await UserAPIHandler.GetUserByIDAsync(context, dbContext));
 
 app.MapPost("/api/user/updatebyid/{userId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-{
-    await UserAPIHandler.UpdateUserAsync(context, dbContext);
-});
+    await UserAPIHandler.UpdateUserAsync(context, dbContext));
+
 app.MapGet("/api/user/getall", async (HttpContext context) =>
-{
-    await context.Response.WriteAsJsonAsync(await UserAPIHandler.GetAllUsersAsync());
-});
+    await context.Response.WriteAsJsonAsync(await UserAPIHandler.GetAllUsersAsync()));
+
 app.MapPost("/api/user/auth", async (MarketplaceDbContext dbContext, HttpContext context) =>
-{
-    await context.Response.WriteAsJsonAsync(await UserAPIHandler.AuthenticateUserAsync(context, dbContext));
-});
+    await context.Response.WriteAsJsonAsync(await UserAPIHandler.AuthenticateUserAsync(context, dbContext)));
 
 
 // Products
 app.MapPost("/api/product/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
-{
-    await ProductAPIHandler.CreateProductAsync(context, dbContext);
-});
+    await ProductAPIHandler.CreateProductAsync(context, dbContext));
 
 app.MapGet("/api/product/deletebyid/{productId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-{
-    await ProductAPIHandler.DeleteProductByIDAsync(context, dbContext);
-});
+    await ProductAPIHandler.DeleteProductByIDAsync(context, dbContext));
 
 app.MapGet("/api/product/getbyid/{productId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-{
-    await ProductAPIHandler.GetProductAsync(context, dbContext);
-});
+    await ProductAPIHandler.GetProductAsync(context, dbContext));
 
 app.MapPost("/api/product/updatebyid/{productId}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-{
-    await ProductAPIHandler.UpdateProductAsync(context, dbContext);
-});
+    await ProductAPIHandler.UpdateProductAsync(context, dbContext));
+
 app.MapGet("/api/product/getall", async (HttpContext context) =>
-{
-    await context.Response.WriteAsJsonAsync(await ProductAPIHandler.GetAllProductsAsync());
-});
+    await context.Response.WriteAsJsonAsync(await ProductAPIHandler.GetAllProductsAsync()));
 
 app.Run();
