@@ -93,6 +93,7 @@ namespace API_Marketplace_.net_7_v1.Controllers
                         productToUpdate.CategoryId = updatedProduct.CategoryId;
                         productToUpdate.SellerUserId = updatedProduct.SellerUserId;
                         productToUpdate.UpdatedAt = DateTime.Now;
+                        productToUpdate.ImageURL = updatedProduct.ImageURL;
                         // Сохраняем изменения в базе данных
                         await dbContext.SaveChangesAsync();
                         context.Response.StatusCode = 200; // OK
