@@ -45,7 +45,7 @@ namespace API_Marketplace_.net_7_v1.API_Handlers
                     var entityJson = JsonSerializer.Serialize(entity);
                     context.Response.StatusCode = 200; // OK
                     context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsJsonAsync(entityJson);
+                    await context.Response.WriteAsync(entityJson);
                 }
                 else
                 {
