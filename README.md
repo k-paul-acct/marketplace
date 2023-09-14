@@ -12,9 +12,9 @@ There Are 6 types of methods:
 <li>DELETE: for /deletebyid/id </li>
 <li>GET: for /getbyid/id and getall </li>
 </ul>
-\n
+
 Examples
-for localhost:8080/api/user/create  \n
+for localhost:8080/api/user/create  
 {
   "FirstName": "John1132",
   "LastName": "Doe1132",
