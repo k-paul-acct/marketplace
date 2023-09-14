@@ -63,7 +63,7 @@ namespace API_Marketplace_.net_7_v1.API_Handlers
         public static async Task GetAllEntitiesAsync<T>(MarketplaceDbContext dbContext, HttpContext context) where T : class
         {
             var entityJson = JsonSerializer.Serialize(await dbContext.Set<T>().ToListAsync());
-            await context.Response.WriteAsJsonAsync(entityJson);
+            await context.Response.WriteAsync(entityJson);
         }
 
         public static async Task UpdateEntityAsync<T>(HttpContext context, MarketplaceDbContext dbContext) where T : class
@@ -201,7 +201,6 @@ namespace API_Marketplace_.net_7_v1.API_Handlers
 
             return true; // Все свойства соответствуют
         }
-
 
     }
 }
