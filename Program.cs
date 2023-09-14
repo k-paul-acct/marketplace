@@ -39,7 +39,7 @@ app.MapPost("/api/user/updatebyid/{Id}", async (MarketplaceDbContext dbContext, 
 app.MapGet("/api/user/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.GetAllEntitiesAsync<User>(dbContext, context));
 
-app.MapPost("/api/user/auth", async (MarketplaceDbContext dbContext, HttpContext context) =>
+app.MapPost("/api/user/getbyfields", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.SearchEntitiesByJsonAsync<User>(context, dbContext));
 
 

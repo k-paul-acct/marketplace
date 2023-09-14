@@ -34,7 +34,7 @@ namespace API_Marketplace_.net_7_v1.API_Handlers
 
         public static async Task GetEntityAsync<T>(HttpContext context, MarketplaceDbContext dbContext) where T : class
         {
-            if (context.Request.RouteValues["EntityId"] is string entityIdStr && int.TryParse(entityIdStr, out int entityId))
+            if (context.Request.RouteValues["Id"] is string entityIdStr && int.TryParse(entityIdStr, out int entityId))
             {
                 // Найдите объект типа T в базе данных по entityId
                 var entity = await dbContext.Set<T>().FindAsync(entityId);
