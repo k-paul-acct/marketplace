@@ -4,7 +4,7 @@
 <li>The API listens on localhost:8080 by default, and you can change this value in Program.cs (line 16)</li>
 </ul>
 
-#Methods
+## Methods
 There Are 6 types of methods:
 <ul>
 <li>POST: for /updatebyid/id and /getbyfields </li>
@@ -12,7 +12,7 @@ There Are 6 types of methods:
 <li>DELETE: for /deletebyid/id </li>
 <li>GET: for /getbyid/id and getall </li>
 </ul>
-# Examples
+### Examples
 for localhost:8080/api/user/create  \n
 {
   "FirstName": "John1132",
