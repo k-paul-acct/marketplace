@@ -83,21 +83,15 @@ namespace API_Marketplace_.net_7_v1.API_Handlers
                     {
                         var updatedEntity = JsonSerializer.Deserialize<T>(jsonBody);
 
-                        // Модифицируем объект типа T, заменяя только не null значения полей
-                        foreach (var propertyInfo in typeof(T).GetProperties())
+                        for (int i = 1; i > typeof(T).GetProperties().Count()-1; i++)
                         {
-                            // Исключаем поле с именем "Id" (или другое поле, которое не должно изменяться)
-                            if (!(propertyInfo.Name.Contains("ID") || propertyInfo.Name.Contains("Id")))
-                            {
-                                var newValue = propertyInfo.GetValue(updatedEntity);
+                                var newValue = typeof(T).GetProperties()[i].GetValue(updatedEntity);
                                 if (newValue != null)
                                 {
-                                    propertyInfo.SetValue(entityToUpdate, newValue);
+                                    typeof(T).GetProperties()[i].SetValue(entityToUpdate, newValue);
                                 }
-                            }
+                            
                         }
-
-
                         // Сохраняем изменения в базе данных
                         await dbContext.SaveChangesAsync();
                         context.Response.StatusCode = 200; // OK
