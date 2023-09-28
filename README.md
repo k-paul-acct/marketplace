@@ -14,7 +14,7 @@ There Are 6 types of methods:
 </ul>
 
 Examples
-// Пример структуры данных для сущности "User"
+"User"
 {
   "UserName": "john_doe",
   "FirstName": "John",
@@ -24,7 +24,7 @@ Examples
   "Role": "User"
 }
 
-// Пример структуры данных для сущности "Product"
+"Product"
 {
   "Name": "Laptop Model XYZ",
   "Description": "Powerful laptop for all your needs",
@@ -33,37 +33,37 @@ Examples
   "ImageURL": "https://example.com/laptop.jpg"
 }
 
-// Пример структуры данных для сущности "Order"
+"Order"
 {
-  "UserId": 1, // Идентификатор пользователя, который разместил заказ
+  "UserId": 1,
   "OrderDate": "2023-08-26T10:00:00",
   "TotalAmount": 499.99
 }
 
-// Пример структуры данных для сущности "OrderItem"
+ "OrderItem"
 {
-  "OrderId": 1, // Идентификатор заказа, к которому относится элемент заказа
-  "ProductId": 2, // Идентификатор продукта в заказе
+  "OrderId": 1, 
+  "ProductId": 2, 
   "Quantity": 2,
   "UnitPrice": 249.99
 }
 
-// Пример структуры данных для сущности "Review"
+ "Review"
 {
-  "ProductId": 3, // Идентификатор продукта, к которому оставлен отзыв
-  "UserId": 4, // Идентификатор пользователя, оставившего отзыв
+  "ProductId": 3, 
+  "UserId": 4,
   "Rating": 5,
   "Comment": "Great product! Highly recommended."
 }
 
-// Пример структуры данных для сущности "Category"
+ "Category"
 {
   "Name": "Laptops",
   "Description": "Category for various laptop models"
 }
 
-// Пример структуры данных для сущности "Wishlist"
+"Wishlist"
 {
-  "UserId": 1, // Идентификатор пользователя, создавшего список желаний
-  "ProductIds": [1, 2, 3] // Список идентификаторов продуктов в списке желаний
+  "UserId": 1, 
+  "ProductId": 2
 }
