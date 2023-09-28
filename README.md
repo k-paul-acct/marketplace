@@ -14,6 +14,7 @@ There Are 6 types of methods:
 </ul>
 
 Examples
+```json
 "User"
 {
   "UserName": "john_doe",
@@ -67,3 +68,4 @@ Examples
   "UserId": 1, 
   "ProductId": 2
 }
+```
