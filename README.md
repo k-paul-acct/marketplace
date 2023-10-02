@@ -21,17 +21,21 @@ Examples
   "FirstName": "John",
   "LastName": "Doe",
   "Email": "john@example.com",
-  "Password": "secure_password",
-  "Role": "User"
+  "PasswordHash": "secure_password",
+  "Phone":"88006565665"
+  "RoleId": 2,
+  "ImageURL" : "https://i.stack.imgur.com/ILTQq.png"
 }
 
 "Product"
 {
   "Name": "Laptop Model XYZ",
   "Description": "Powerful laptop for all your needs",
-  "Category": "Laptops",
+  "CategoryId": 3,
   "Price": 999.99,
-  "ImageURL": "https://example.com/laptop.jpg"
+  "ImageURL": "https://example.com/laptop.jpg",
+  "StockQuantity" : 100,
+  "SellerUserID" : 2
 }
 
 "Order"
@@ -55,6 +59,7 @@ Examples
   "UserId": 4,
   "Rating": 5,
   "Comment": "Great product! Highly recommended."
+  "ImageURL" : "https://i.stack.imgur.com/ILTQq.png"
 }
 
  "Category"
