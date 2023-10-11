@@ -1,8 +1,9 @@
-﻿using API_Marketplace_.net_7_v1.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using Marketplace.Api.Data;
+using Marketplace.Api.Models;
 
-namespace API_Marketplace_.net_7_v1.API_Handlers
+namespace Marketplace.Api.API_Handlers
 {
     public class APIHandler
     {

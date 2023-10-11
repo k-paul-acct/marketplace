@@ -1,27 +1,14 @@
-using API_Marketplace_.net_7_v1.API_Handlers;
-using API_Marketplace_.net_7_v1.Controllers;
-using API_Marketplace_.net_7_v1.Models;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
+using Marketplace.Api.API_Handlers;
+using Marketplace.Api.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
+using Marketplace.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://localhost:8080"); 
-builder.Services.AddDbContext<MarketplaceDbContext>(options =>
-{
-    options.UseSqlServer("Server=DESKTOP-L57VS11;Database=master;Trusted_Connection=True;"); // Замените на вашу строку подключения
-});
+
+builder.Services.AddDbContext<MarketplaceDbContext>(o =>
+    o.UseSqlServer(builder.Configuration["ConnectionStrings:Marketplace"]));
 
 var app = builder.Build();
-
 
 // Users
 app.MapPut("/api/user/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
@@ -42,8 +29,6 @@ app.MapGet("/api/user/getall", async (MarketplaceDbContext dbContext, HttpContex
 app.MapPost("/api/user/getbyfields", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.SearchEntitiesByJsonAsync<User>(context, dbContext));
 
-
-
 // Products
 app.MapPut("/api/product/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.CreateEntityAsync<Product>(context, dbContext));
@@ -59,7 +44,6 @@ app.MapPost("/api/product/updatebyid/{Id}", async (MarketplaceDbContext dbContex
 
 app.MapGet("/api/product/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.GetAllEntitiesAsync<Product>(dbContext, context));
-
 
 // Orders
 app.MapPut("/api/order/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
@@ -77,24 +61,6 @@ app.MapPost("/api/order/updatebyid/{Id}", async (MarketplaceDbContext dbContext,
 app.MapGet("/api/order/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.GetAllEntitiesAsync<Order>(dbContext, context));
 
-
-// OrderItems
-app.MapPut("/api/orderitem/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.CreateEntityAsync<OrderItem>(context, dbContext));
-
-app.MapDelete("/api/orderitem/deletebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.DeleteEntityByIDAsync<OrderItem>(context, dbContext));
-
-app.MapGet("/api/orderitem/getbyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetEntityAsync<OrderItem>(context, dbContext));
-
-app.MapPost("/api/orderitem/updatebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.UpdateEntityAsync<OrderItem>(context, dbContext));
-
-app.MapGet("/api/orderitem/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetAllEntitiesAsync<OrderItem>(dbContext, context));
-
-
 // Reviews
 app.MapPut("/api/review/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.CreateEntityAsync<Review>(context, dbContext));
@@ -110,7 +76,6 @@ app.MapPost("/api/review/updatebyid/{Id}", async (MarketplaceDbContext dbContext
 
 app.MapGet("/api/review/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.GetAllEntitiesAsync<Review>(dbContext, context));
-
 
 // Categories
 app.MapPut("/api/category/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
@@ -128,24 +93,6 @@ app.MapGet("/api/category/deletebyid/{Id}", async (MarketplaceDbContext dbContex
 app.MapGet("/api/category/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.GetAllEntitiesAsync<Category>(dbContext, context));
 
-
-// Wishlists
-app.MapPut("/api/wishlist/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.CreateEntityAsync<Wishlist>(context, dbContext));
-
-app.MapDelete("/api/wishlist/getbyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.DeleteEntityByIDAsync<Wishlist>(context, dbContext));
-
-app.MapPost("/api/wishlist/updatebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.UpdateEntityAsync<Wishlist>(context, dbContext));
-
-app.MapGet("/api/wishlist/deletebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetEntityAsync<Wishlist>(context, dbContext));
-
-app.MapGet("/api/wishlist/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetAllEntitiesAsync<Wishlist>(dbContext, context));
-
-
 // Roles
 app.MapPut("/api/role/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.CreateEntityAsync<Role>(context, dbContext));
@@ -162,6 +109,9 @@ app.MapGet("/api/role/deletebyid/{Id}", async (MarketplaceDbContext dbContext, H
 app.MapGet("/api/role/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.GetAllEntitiesAsync<Role>(dbContext, context));
 
-
+// DB stuff.
+using var scope = app.Services.CreateScope();
+await using var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
+await dbContext.Database.MigrateAsync();
 
 app.Run();
