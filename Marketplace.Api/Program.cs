@@ -157,7 +157,7 @@ productApi.MapGet("/getbyid/{id:int}", async (int id, MarketplaceDbContext conte
     return product is null ? Results.NotFound() : Results.Ok(product);
 });
 
-productApi.MapGet("/id:int/reviews", async (int id, MarketplaceDbContext context) =>
+productApi.MapGet("/{id:int}/reviews", async (int id, MarketplaceDbContext context) =>
 {
     var reviews = await context.Reviews.Where(x => x.ProductId == id).ToListAsync();
     return Results.Ok(reviews);
