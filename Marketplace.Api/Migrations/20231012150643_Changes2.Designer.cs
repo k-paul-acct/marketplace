@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Marketplace.Api.Migrations
 {
     [DbContext(typeof(MarketplaceDbContext))]
-    [Migration("20231012145147_Changes")]
-    partial class Changes
+    [Migration("20231012150643_Changes2")]
+    partial class Changes2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

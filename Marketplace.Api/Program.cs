@@ -137,8 +137,7 @@ app.MapGet("/api/role/getall", async (MarketplaceDbContext dbContext, HttpContex
 // DB stuff.
 using var scope = app.Services.CreateScope();
 await using var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
+await dbContext.Database.EnsureDeletedAsync();
 await dbContext.Database.MigrateAsync();
-
-
 
 app.Run();

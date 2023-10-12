@@ -81,7 +81,6 @@ public class MarketplaceDbContext : DbContext
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.RoleId);
-            entity.Property(e => e.RoleId);
 
             entity.Property(e => e.RoleName).HasMaxLength(255);
 
