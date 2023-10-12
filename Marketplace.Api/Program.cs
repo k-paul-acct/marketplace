@@ -6,11 +6,22 @@ using Marketplace.Api.Types;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Services configuration.
 builder.Services.AddDbContext<MarketplaceDbContext>(o => o.UseSqlServer(builder.Configuration["ConnectionStrings:Marketplace"]));
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Users
+// App configuration.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// Users.
 app.MapGet("/api/user/auth", async (string email, string password, MarketplaceDbContext context) =>
 {
     var user = await context.Users.FirstOrDefaultAsync(x => x.Email == email && x .PasswordHash == password);
@@ -139,4 +150,5 @@ using var scope = app.Services.CreateScope();
 await using var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
 await dbContext.Database.EnsureCreatedAsync();
 
+// Starting the app.
 app.Run();
