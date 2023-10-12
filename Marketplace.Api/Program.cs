@@ -21,14 +21,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+var api = app.MapGroup("/api");
+var userApi = api.MapGroup("/user").WithTags("User");
+
 // Users.
-app.MapGet("/api/user/auth", async (string email, string password, MarketplaceDbContext context) =>
+userApi.MapGet("/auth", async (string email, string password, MarketplaceDbContext context) =>
 {
     var user = await context.Users.FirstOrDefaultAsync(x => x.Email == email && x .PasswordHash == password);
     return user is null ? Results.Ok(user) : Results.Unauthorized();
 });
 
-app.MapPut("/api/user/create", async (User userModel, MarketplaceDbContext context) =>
+userApi.MapPut("/create", async (User userModel, MarketplaceDbContext context) =>
 {
     userModel.FirstName = userModel.FirstName.Trim();
     userModel.LastName = userModel.LastName.Trim();
@@ -50,19 +53,19 @@ app.MapPut("/api/user/create", async (User userModel, MarketplaceDbContext conte
     }
 });
 
-app.MapDelete("/api/user/deletebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+userApi.MapDelete("/deletebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.DeleteEntityByIDAsync<User>(context, dbContext));
 
-app.MapGet("/api/user/getbyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+userApi.MapGet("/getbyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.GetEntityAsync<User>(context, dbContext));
 
-app.MapPost("/api/user/updatebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
+userApi.MapPost("/updatebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.UpdateEntityAsync<User>(context, dbContext));
 
-app.MapGet("/api/user/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
+userApi.MapGet("/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.GetAllEntitiesAsync<User>(dbContext, context));
 
-app.MapPost("/api/user/getbyfields", async (MarketplaceDbContext dbContext, HttpContext context) =>
+userApi.MapPost("/getbyfields", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.SearchEntitiesByJsonAsync<User>(context, dbContext));
 
 // Products
