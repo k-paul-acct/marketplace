@@ -27,8 +27,8 @@ var userApi = api.MapGroup("/user").WithTags("User");
 // Users.
 userApi.MapGet("/auth", async (string email, string password, MarketplaceDbContext context) =>
 {
-    var user = await context.Users.FirstOrDefaultAsync(x => x.Email == email && x .PasswordHash == password);
-    return user is null ? Results.Ok(user) : Results.Unauthorized();
+    var user = await context.Users.FirstOrDefaultAsync(x => x.Email == email && x.PasswordHash == password);
+    return user is null ? Results.Unauthorized() : Results.Ok(user);
 });
 
 userApi.MapPut("/create", async (User userModel, MarketplaceDbContext context) =>
@@ -151,7 +151,14 @@ app.MapGet("/api/role/getall", async (MarketplaceDbContext dbContext, HttpContex
 // DB stuff.
 using var scope = app.Services.CreateScope();
 await using var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
-await dbContext.Database.EnsureCreatedAsync();
+try
+{
+    await dbContext.Database.MigrateAsync();
+}
+catch
+{
+    // ignored
+}
 
 // Starting the app.
 app.Run();
