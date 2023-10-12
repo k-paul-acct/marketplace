@@ -1,4 +1,6 @@
-﻿namespace Marketplace.Api.Models;
+﻿using System.Text.Json.Serialization;
+
+namespace Marketplace.Api.Models;
 
 public class Product
 {
@@ -15,7 +17,13 @@ public class Product
 
     public virtual Category Category { get; set; } = null!;
     public virtual User Seller { get; set; } = null!;
+
+    [JsonIgnore]
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+
+    [JsonIgnore]
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
+
+    [JsonIgnore]
     public virtual ICollection<UserHasProductInWishlist> WishedByUsers { get; set; } = new List<UserHasProductInWishlist>();
 }
