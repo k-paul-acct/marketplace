@@ -81,8 +81,15 @@ public class MarketplaceDbContext : DbContext
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.RoleId);
+            entity.Property(e => e.RoleId);
 
             entity.Property(e => e.RoleName).HasMaxLength(255);
+
+            entity.HasData(
+                new Role { RoleId = Types.Roles.User, RoleName = "User", },
+                new Role { RoleId = Types.Roles.Moderator, RoleName = "Moderator", },
+                new Role { RoleId = Types.Roles.Admin, RoleName = "Admin", },
+                new Role { RoleId = Types.Roles.Director, RoleName = "Director", });
         });
 
         modelBuilder.Entity<User>(entity =>

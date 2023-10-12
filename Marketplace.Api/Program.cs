@@ -2,17 +2,42 @@ using Marketplace.Api.API_Handlers;
 using Marketplace.Api.Models;
 using Microsoft.EntityFrameworkCore;
 using Marketplace.Api.Data;
+using Marketplace.Api.Types;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<MarketplaceDbContext>(o =>
-    o.UseSqlServer(builder.Configuration["ConnectionStrings:Marketplace"]));
+builder.Services.AddDbContext<MarketplaceDbContext>(o => o.UseSqlServer(builder.Configuration["ConnectionStrings:Marketplace"]));
 
 var app = builder.Build();
 
 // Users
-app.MapPut("/api/user/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.CreateEntityAsync<User>(context, dbContext));
+app.MapGet("/api/user/auth", async (string email, string password, MarketplaceDbContext context) =>
+{
+    var user = await context.Users.FirstOrDefaultAsync(x => x.Email == email && x .PasswordHash == password);
+    return user is null ? Results.Ok(user) : Results.Unauthorized();
+});
+
+app.MapPut("/api/user/create", async (User userModel, MarketplaceDbContext context) =>
+{
+    userModel.FirstName = userModel.FirstName.Trim();
+    userModel.LastName = userModel.LastName.Trim();
+    userModel.Email = userModel.Email.Trim();
+    userModel.PasswordHash = userModel.PasswordHash.Trim();
+    userModel.Phone = userModel.Phone.Trim();
+    userModel.ImageUrl = userModel.ImageUrl?.Trim();
+    userModel.RoleId = Roles.User;
+
+    try
+    {
+        context.Users.Add(userModel);
+        await context.SaveChangesAsync();
+        return Results.Json(userModel, statusCode: StatusCodes.Status201Created);
+    }
+    catch (DbUpdateException)
+    {
+        return Results.Conflict();
+    }
+});
 
 app.MapDelete("/api/user/deletebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
     await APIHandler.DeleteEntityByIDAsync<User>(context, dbContext));
@@ -113,5 +138,7 @@ app.MapGet("/api/role/getall", async (MarketplaceDbContext dbContext, HttpContex
 using var scope = app.Services.CreateScope();
 await using var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
 await dbContext.Database.MigrateAsync();
+
+
 
 app.Run();
