@@ -110,7 +110,7 @@ public class MarketplaceDbContext : DbContext
 
         modelBuilder.Entity<UserHasProductInWishlist>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.ProductId });
+            entity.HasKey(e => new { e.UserId, e.ProductId, });
 
             entity.HasOne(x => x.User).WithMany(x => x.WishlistProducts)
                 .HasForeignKey(d => d.UserId)

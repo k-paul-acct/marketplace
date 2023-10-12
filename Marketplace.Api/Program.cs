@@ -1,8 +1,7 @@
-using Marketplace.Api.API_Handlers;
-using Marketplace.Api.Models;
-using Microsoft.EntityFrameworkCore;
 using Marketplace.Api.Data;
+using Marketplace.Api.Models;
 using Marketplace.Api.Types;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +23,9 @@ if (app.Environment.IsDevelopment())
 var api = app.MapGroup("/api");
 var userApi = api.MapGroup("/user").WithTags("User");
 var productApi = api.MapGroup("/product").WithTags("Product");
+var orderApi = api.MapGroup("/order").WithTags("Order");
+var reviewApi = api.MapGroup("/review").WithTags("Review");
+var categoryApi = api.MapGroup("/category").WithTags("Category");
 
 // Users.
 userApi.MapGet("/auth", async (string email, string password, MarketplaceDbContext context) =>
@@ -55,20 +57,59 @@ userApi.MapPut("/create", async (User userModel, MarketplaceDbContext context) =
     }
 });
 
-userApi.MapDelete("/deletebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.DeleteEntityByIDAsync<User>(context, dbContext));
+userApi.MapDelete("/deletebyid/{id:int}", async (int id, MarketplaceDbContext context) =>
+{
+    var user = await context.Users.FindAsync(id);
+    if (user is null) return Results.NotFound();
 
-userApi.MapGet("/getbyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetEntityAsync<User>(context, dbContext));
+    try
+    {
+        context.Users.Remove(user);
+        await context.SaveChangesAsync();
+        return Results.Ok();
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
 
-userApi.MapPost("/updatebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.UpdateEntityAsync<User>(context, dbContext));
+userApi.MapGet("/getbyid/{id:int}", async (int id, MarketplaceDbContext context) =>
+{
+    var user = await context.Users.FindAsync(id);
+    return user is null ? Results.NotFound() : Results.Ok(user);
+});
 
-userApi.MapGet("/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetAllEntitiesAsync<User>(dbContext, context));
+userApi.MapPost("/update", async (User userModel, MarketplaceDbContext context) =>
+{
+    var user = await context.Users.FindAsync(userModel.UserId);
+    if (user is null) return Results.NotFound();
 
-userApi.MapPost("/getbyfields", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.SearchEntitiesByJsonAsync<User>(context, dbContext));
+    user.FirstName = userModel.FirstName.Trim();
+    user.LastName = userModel.LastName.Trim();
+    user.Email = userModel.Email.Trim();
+    user.PasswordHash = userModel.PasswordHash.Trim();
+    user.Phone = userModel.Phone.Trim();
+    user.ImageUrl = userModel.ImageUrl?.Trim();
+
+    try
+    {
+        await context.SaveChangesAsync();
+        return Results.Ok(user);
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
+
+userApi.MapGet("/getall", async (MarketplaceDbContext context) =>
+{
+    var users = await context.Users.ToListAsync();
+    return Results.Ok(users);
+});
 
 // Product.
 productApi.MapPut("/create", async (Product productModel, MarketplaceDbContext context) =>
@@ -92,87 +133,269 @@ productApi.MapPut("/create", async (Product productModel, MarketplaceDbContext c
     }
 });
 
-productApi.MapDelete("/deletebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.DeleteEntityByIDAsync<Product>(context, dbContext));
+productApi.MapDelete("/deletebyid/{id:int}", async (int id, MarketplaceDbContext context) =>
+{
+    var product = await context.Products.FindAsync(id);
+    if (product is null) return Results.NotFound();
 
-productApi.MapGet("/getbyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetEntityAsync<Product>(context, dbContext));
+    try
+    {
+        context.Products.Remove(product);
+        await context.SaveChangesAsync();
+        return Results.Ok();
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
 
-productApi.MapPost("/updatebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.UpdateEntityAsync<Product>(context, dbContext));
+productApi.MapGet("/getbyid/{id:int}", async (int id, MarketplaceDbContext context) =>
+{
+    var product = await context.Products.FindAsync(id);
+    return product is null ? Results.NotFound() : Results.Ok(product);
+});
+
+productApi.MapPost("/update", async (Product productModel, MarketplaceDbContext context) =>
+{
+    var product = await context.Products.FindAsync(productModel.ProductId);
+    if (product is null) return Results.NotFound();
+
+    product.Name = productModel.Name.Trim();
+    product.Description = productModel.Description?.Trim();
+    product.Price = productModel.Price;
+    product.StockQuantity = productModel.StockQuantity;
+    product.ImageUrl = productModel.ImageUrl?.Trim();
+    product.CategoryId = productModel.CategoryId;
+
+    try
+    {
+        await context.SaveChangesAsync();
+        return Results.Ok(product);
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
 
 productApi.MapGet("/getall", async (MarketplaceDbContext context) =>
 {
     var products = await context.Products
         .Include(x => x.Category)
-        .Include(x =>x.Seller)
+        .Include(x => x.Seller)
         .ToListAsync();
     return Results.Ok(products);
 });
 
-// Orders
-app.MapPut("/api/order/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.CreateEntityAsync<Order>(context, dbContext));
+// Order.
+orderApi.MapPut("/create", async (Order orderModel, MarketplaceDbContext context) =>
+{
+    orderModel.OrderDate = DateTime.UtcNow;
 
-app.MapDelete("/api/order/deletebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.DeleteEntityByIDAsync<Order>(context, dbContext));
+    try
+    {
+        context.Orders.Add(orderModel);
+        await context.SaveChangesAsync();
+        return Results.Json(orderModel, statusCode: StatusCodes.Status201Created);
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict(e);
+    }
+});
 
-app.MapGet("/api/order/getbyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetEntityAsync<Order>(context, dbContext));
+orderApi.MapDelete("/deletebyid/{id:int}", async (int id, MarketplaceDbContext context) =>
+{
+    var order = await context.Orders.FindAsync(id);
+    if (order is null) return Results.NotFound();
 
-app.MapPost("/api/order/updatebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.UpdateEntityAsync<Order>(context, dbContext));
+    try
+    {
+        context.Orders.Remove(order);
+        await context.SaveChangesAsync();
+        return Results.Ok();
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
 
-app.MapGet("/api/order/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetAllEntitiesAsync<Order>(dbContext, context));
+orderApi.MapGet("/getbyid/{id:int}", async (int id, MarketplaceDbContext context) =>
+{
+    var order = await context.Orders.FindAsync(id);
+    return order is null ? Results.NotFound() : Results.Ok(order);
+});
 
-// Reviews
-app.MapPut("/api/review/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.CreateEntityAsync<Review>(context, dbContext));
+orderApi.MapPost("/update", async (Order orderModel, MarketplaceDbContext context) =>
+{
+    var order = await context.Orders.FindAsync(orderModel.OrderId);
+    if (order is null) return Results.NotFound();
 
-app.MapDelete("/api/review/deletebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.DeleteEntityByIDAsync<Review>(context, dbContext));
+    order.TotalQuantity = orderModel.TotalQuantity;
+    order.TotalAmount = orderModel.TotalAmount;
 
-app.MapGet("/api/review/getbyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetEntityAsync<Review>(context, dbContext));
+    try
+    {
+        await context.SaveChangesAsync();
+        return Results.Ok(order);
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
 
-app.MapPost("/api/review/updatebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.UpdateEntityAsync<Review>(context, dbContext));
+orderApi.MapGet("/getall", async (MarketplaceDbContext context) =>
+{
+    var orders = await context.Orders.ToListAsync();
+    return Results.Ok(orders);
+});
 
-app.MapGet("/api/review/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetAllEntitiesAsync<Review>(dbContext, context));
+// Review.
+reviewApi.MapPut("/create", async (Review reviewModel, MarketplaceDbContext context) =>
+{
+    reviewModel.CreatedAt = DateTime.UtcNow;
+    reviewModel.Comment = reviewModel.Comment.Trim();
+    reviewModel.ImageUrl = reviewModel.ImageUrl?.Trim();
 
-// Categories
-app.MapPut("/api/category/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.CreateEntityAsync<Category>(context, dbContext));
+    try
+    {
+        context.Reviews.Add(reviewModel);
+        await context.SaveChangesAsync();
+        return Results.Json(reviewModel, statusCode: StatusCodes.Status201Created);
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
 
-app.MapDelete("/api/category/getbyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.DeleteEntityByIDAsync<Category>(context, dbContext));
+reviewApi.MapDelete("/deletebyid/{id:int}", async (int id, MarketplaceDbContext context) =>
+{
+    var review = await context.Reviews.FindAsync(id);
+    if (review is null) return Results.NotFound();
 
-app.MapPost("/api/category/updatebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.UpdateEntityAsync<Category>(context, dbContext));
+    try
+    {
+        context.Reviews.Remove(review);
+        await context.SaveChangesAsync();
+        return Results.Ok();
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
 
-app.MapGet("/api/category/deletebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetEntityAsync<Category>(context, dbContext));
+reviewApi.MapGet("/getbyid/{id:int}", async (int id, MarketplaceDbContext context) =>
+{
+    var review = await context.Reviews.FindAsync(id);
+    return review is null ? Results.NotFound() : Results.Ok(review);
+});
 
-app.MapGet("/api/category/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetAllEntitiesAsync<Category>(dbContext, context));
+reviewApi.MapPost("/update", async (Review reviewModel, MarketplaceDbContext context) =>
+{
+    var review = await context.Reviews.FindAsync(reviewModel.ReviewId);
+    if (review is null) return Results.NotFound();
 
-// Roles
-app.MapPut("/api/role/create", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.CreateEntityAsync<Role>(context, dbContext));
+    review.Comment = reviewModel.Comment.Trim();
+    review.ImageUrl = reviewModel.ImageUrl?.Trim();
 
-app.MapDelete("/api/role/getbyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.DeleteEntityByIDAsync<Role>(context, dbContext));
+    try
+    {
+        await context.SaveChangesAsync();
+        return Results.Ok(review);
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
 
-app.MapPost("/api/role/updatebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.UpdateEntityAsync<Role>(context, dbContext));
+reviewApi.MapGet("/getall", async (MarketplaceDbContext context) =>
+{
+    var reviews = await context.Reviews.ToListAsync();
+    return Results.Ok(reviews);
+});
 
-app.MapGet("/api/role/deletebyid/{Id}", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetEntityAsync<Role>(context, dbContext));
+// Category.
+categoryApi.MapPut("/create", async (Category categoryModel, MarketplaceDbContext context) =>
+{
+    categoryModel.Name = categoryModel.Name.Trim();
+    categoryModel.Description = categoryModel.Description?.Trim();
 
-app.MapGet("/api/role/getall", async (MarketplaceDbContext dbContext, HttpContext context) =>
-    await APIHandler.GetAllEntitiesAsync<Role>(dbContext, context));
+    try
+    {
+        context.Categories.Add(categoryModel);
+        await context.SaveChangesAsync();
+        return Results.Ok(context);
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
+
+categoryApi.MapDelete("/getbyid/{id:int}", async (int id, MarketplaceDbContext context) =>
+{
+    var category = await context.Categories.FindAsync(id);
+    return category is null ? Results.NotFound() : Results.Ok(category);
+});
+
+categoryApi.MapPost("/update", async (Category categoryModel, MarketplaceDbContext context) =>
+{
+    var category = await context.Categories.FindAsync(categoryModel.CategoryId);
+    if (category is null) return Results.NotFound();
+
+    category.Name = categoryModel.Name.Trim();
+    category.Description = categoryModel.Description?.Trim();
+
+    try
+    {
+        await context.SaveChangesAsync();
+        return Results.Ok(category);
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
+
+categoryApi.MapGet("/deletebyid/{id:int}", async (int id, MarketplaceDbContext context) =>
+{
+    var category = await context.Categories.FindAsync(id);
+    if (category is null) return Results.NotFound();
+
+    try
+    {
+        context.Categories.Remove(category);
+        await context.SaveChangesAsync();
+        return Results.Ok();
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
+
+categoryApi.MapGet("/getall", async (MarketplaceDbContext context) =>
+{
+    var categories = await context.Categories.ToListAsync();
+    return Results.Ok(categories);
+});
 
 // DB stuff.
 using var scope = app.Services.CreateScope();
