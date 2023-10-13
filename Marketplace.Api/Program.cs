@@ -115,7 +115,7 @@ userApi.MapGet("/getall", async (MarketplaceDbContext context) =>
 
 userApi.MapGet("/products", async (int id, MarketplaceDbContext context) =>
 {
-    var products = await context.Products.Where(x => x.SellerId == id).ToListAsync();
+    var products = await context.Products.Include(x => x.Seller).Where(x => x.SellerId == id).ToListAsync();
     return Results.Ok(products);
 });
 
