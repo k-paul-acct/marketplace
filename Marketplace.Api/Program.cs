@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Services configuration.
-builder.Services.AddDbContext<MarketplaceDbContext>(o => o.UseSqlServer(builder.Configuration["ConnectionStrings:Marketplace"]));
+builder.Services.AddDbContext<MarketplaceDbContext>(o =>
+    o.UseSqlServer(builder.Configuration["ConnectionStrings:Marketplace"]));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -26,6 +27,7 @@ var productApi = api.MapGroup("/product").WithTags("Product");
 var orderApi = api.MapGroup("/order").WithTags("Order");
 var reviewApi = api.MapGroup("/review").WithTags("Review");
 var categoryApi = api.MapGroup("/category").WithTags("Category");
+var cartApi = api.MapGroup("/cart").WithTags("Cart");
 
 // Users.
 userApi.MapGet("/auth", async (string email, string password, MarketplaceDbContext context) =>
@@ -109,6 +111,12 @@ userApi.MapGet("/getall", async (MarketplaceDbContext context) =>
 {
     var users = await context.Users.ToListAsync();
     return Results.Ok(users);
+});
+
+userApi.MapGet("/products", async (int id, MarketplaceDbContext context) =>
+{
+    var products = await context.Products.Include(x => x.Seller).Where(x => x.SellerId == id).ToListAsync();
+    return Results.Ok(products);
 });
 
 // Product.
@@ -402,6 +410,58 @@ categoryApi.MapGet("/getall", async (MarketplaceDbContext context) =>
 {
     var categories = await context.Categories.ToListAsync();
     return Results.Ok(categories);
+});
+
+// Cart.
+cartApi.MapPost("/add-product", async (int userId, int productId, MarketplaceDbContext context) =>
+{
+    var item = new UserHasProductInWishlist
+    {
+        UserId = userId,
+        ProductId = productId,
+    };
+
+    try
+    {
+        context.UserHasProductInWishlist.Add(item);
+        await context.SaveChangesAsync();
+        return Results.Ok();
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
+
+cartApi.MapPost("/remove-product", async (int userId, int productId, MarketplaceDbContext context) =>
+{
+    var item = await context.UserHasProductInWishlist
+        .Where(x => x.UserId == userId && x.ProductId == productId)
+        .FirstOrDefaultAsync();
+    if (item is null) return Results.NotFound();
+
+    try
+    {
+        context.UserHasProductInWishlist.Remove(item);
+        await context.SaveChangesAsync();
+        return Results.Ok();
+    }
+    catch (DbUpdateException e)
+    {
+        Console.WriteLine(e);
+        return Results.Conflict();
+    }
+});
+
+cartApi.MapGet("", async (int userId, MarketplaceDbContext context) =>
+{
+    var products = await (from cartItem in context.UserHasProductInWishlist
+        join product in context.Products on cartItem.ProductId equals product.ProductId
+        where cartItem.UserId == userId
+        select product).ToListAsync();
+
+    return Results.Ok(products);
 });
 
 // DB stuff.
