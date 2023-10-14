@@ -190,6 +190,7 @@ productApi.MapPost("/update", async (Product productModel, MarketplaceDbContext 
 productApi.MapGet("/getall", async (MarketplaceDbContext context) =>
 {
     var products = await context.Products
+        .Where(x => x.UpdatedAt != null)
         .Include(x => x.Category)
         .Include(x => x.Seller)
         .ToListAsync();
@@ -258,9 +259,9 @@ orderApi.MapPost("/update", async (Order orderModel, MarketplaceDbContext contex
     }
 });
 
-orderApi.MapGet("/getall", async (MarketplaceDbContext context) =>
+orderApi.MapGet("/getall", async (int userId, MarketplaceDbContext context) =>
 {
-    var orders = await context.Orders.ToListAsync();
+    var orders = await context.Orders.Where(x => x.UserId == userId).ToListAsync();
     return Results.Ok(orders);
 });
 
