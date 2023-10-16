@@ -161,7 +161,9 @@ productApi.MapDelete("/deletebyid/{id:int}", async (int id, MarketplaceDbContext
 
 productApi.MapGet("/getbyid/{id:int}", async (int id, MarketplaceDbContext context) =>
 {
-    var product = await context.Products.FindAsync(id);
+    var product = await context.Products
+    .Include(x => x.Seller)
+    .FirstAsync(x => x.ProductId == id);
     return product is null ? Results.NotFound() : Results.Ok(product);
 });
 
