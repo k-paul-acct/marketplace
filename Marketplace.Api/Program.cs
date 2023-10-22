@@ -1,13 +1,14 @@
 using Marketplace.Api.Data;
-using Marketplace.Api.Models;
+using Marketplace.Api.Data.Models;
+using Marketplace.Api.Dto;
+using Marketplace.Api.Mapping;
 using Marketplace.Api.Types;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Services configuration.
-builder.Services.AddDbContext<MarketplaceDbContext>(o =>
-    o.UseSqlServer(builder.Configuration["ConnectionStrings:Marketplace"]));
+builder.Services.AddDbContext<MarketplaceDbContext>(o => o.UseSqlServer(builder.Configuration["ConnectionStrings:Marketplace"]));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -32,25 +33,29 @@ var cartApi = api.MapGroup("/cart").WithTags("Cart");
 // Users.
 userApi.MapGet("/auth", async (string email, string password, MarketplaceDbContext context) =>
 {
-    var user = await context.Users.FirstOrDefaultAsync(x => x.Email == email && x.PasswordHash == password);
-    return user is null ? Results.Unauthorized() : Results.Ok(user);
+    var user = await context.Users.Include(x => x.Roles).FirstOrDefaultAsync(x => x.Email == email && x.PasswordHash == password);
+    return user is null ? Results.Unauthorized() : Results.Ok(user.MapToDto());
 });
 
-userApi.MapPut("/create", async (User userModel, MarketplaceDbContext context) =>
+userApi.MapPut("/create", async (UserDto userModel, MarketplaceDbContext context) =>
 {
-    userModel.FirstName = userModel.FirstName.Trim();
-    userModel.LastName = userModel.LastName.Trim();
-    userModel.Email = userModel.Email.Trim();
-    userModel.PasswordHash = userModel.PasswordHash.Trim();
-    userModel.Phone = userModel.Phone.Trim();
-    userModel.ImageUrl = userModel.ImageUrl?.Trim();
-    userModel.RoleId = Roles.User;
+    var role = await context.Roles.FirstAsync(x => x.Id == (int)Roles.User);
+    var user = new User
+    {
+        FirstName = userModel.FirstName,
+        LastName = userModel.LastName,
+        Email = userModel.Email,
+        PasswordHash = userModel.PasswordHash,
+        Phone = userModel.Phone,
+        ImageUrl = userModel.ImageUrl,
+        Roles = { role, },
+    };
 
     try
     {
-        context.Users.Add(userModel);
+        context.Users.Add(user);
         await context.SaveChangesAsync();
-        return Results.Json(userModel, statusCode: StatusCodes.Status201Created);
+        return Results.Json(user.MapToDto(), statusCode: StatusCodes.Status201Created);
     }
     catch (DbUpdateException e)
     {
@@ -79,26 +84,26 @@ userApi.MapDelete("/deletebyid/{id:int}", async (int id, MarketplaceDbContext co
 
 userApi.MapGet("/getbyid/{id:int}", async (int id, MarketplaceDbContext context) =>
 {
-    var user = await context.Users.FindAsync(id);
-    return user is null ? Results.NotFound() : Results.Ok(user);
+    var user = await context.Users.Include(x => x.Roles).FirstOrDefaultAsync(x => x.Id == id);
+    return user is null ? Results.NotFound() : Results.Ok(user.MapToDto());
 });
 
-userApi.MapPost("/update", async (User userModel, MarketplaceDbContext context) =>
+userApi.MapPost("/update", async (UserDto userModel, MarketplaceDbContext context) =>
 {
-    var user = await context.Users.FindAsync(userModel.UserId);
+    var user = await context.Users.Include(x => x.Roles).FirstOrDefaultAsync(x => x.Id == userModel.Id);
     if (user is null) return Results.NotFound();
 
-    user.FirstName = userModel.FirstName.Trim();
-    user.LastName = userModel.LastName.Trim();
-    user.Email = userModel.Email.Trim();
-    user.PasswordHash = userModel.PasswordHash.Trim();
-    user.Phone = userModel.Phone.Trim();
-    user.ImageUrl = userModel.ImageUrl?.Trim();
+    user.FirstName = userModel.FirstName;
+    user.LastName = userModel.LastName;
+    user.Email = userModel.Email;
+    user.PasswordHash = userModel.PasswordHash;
+    user.Phone = userModel.Phone;
+    user.ImageUrl = userModel.ImageUrl;
 
     try
     {
         await context.SaveChangesAsync();
-        return Results.Ok(user);
+        return Results.Ok(user.MapToDto());
     }
     catch (DbUpdateException e)
     {
@@ -109,30 +114,43 @@ userApi.MapPost("/update", async (User userModel, MarketplaceDbContext context) 
 
 userApi.MapGet("/getall", async (MarketplaceDbContext context) =>
 {
-    var users = await context.Users.ToListAsync();
-    return Results.Ok(users);
+    var users = await context.Users.Include(x => x.Roles).ToListAsync();
+    return Results.Ok(users.Select(x => x.MapToDto()));
 });
 
 userApi.MapGet("/products", async (int id, MarketplaceDbContext context) =>
 {
-    var products = await context.Products.Include(x => x.Seller).Where(x => x.SellerId == id).ToListAsync();
-    return Results.Ok(products);
+    var products = await context.Products
+        .Include(x => x.Users).ThenInclude(x => x.Roles)
+        .Include(x => x.Categories)
+        .Where(x => x.Users.Any(y => y.Id == id))
+        .ToListAsync();
+    return Results.Ok(products.Select(x => x.MapToDto()));
 });
 
 // Product.
-productApi.MapPut("/create", async (Product productModel, MarketplaceDbContext context) =>
+productApi.MapPut("/create", async (ProductDto productModel, MarketplaceDbContext context) =>
 {
-    productModel.Name = productModel.Name.Trim();
-    productModel.Description = productModel.Description?.Trim();
-    productModel.CreatedAt = DateTime.UtcNow;
-    productModel.UpdatedAt = null;
-    productModel.ImageUrl = productModel.ImageUrl?.Trim();
+    var seller = await context.Users.Include(x => x.Roles).FirstAsync(x => x.Id == productModel.SellerId);
+    var category = await context.Categories.FindAsync(productModel.CategoryId);
+    var product = new Product
+    {
+        Name = productModel.Name,
+        Description = productModel.Description,
+        CreatedAt = DateTime.UtcNow,
+        UpdatedAt = null,
+        ImageUrl = productModel.ImageUrl,
+        Price = productModel.Price,
+        StockQuantity = productModel.StockQuantity,
+        Categories = { category!, },
+        Users = { seller, },
+    };
 
     try
     {
-        context.Products.Add(productModel);
+        context.Products.Add(product);
         await context.SaveChangesAsync();
-        return Results.Json(productModel, statusCode: StatusCodes.Status200OK);
+        return Results.Json(product.MapToDto(), statusCode: StatusCodes.Status200OK);
     }
     catch (DbUpdateException e)
     {
@@ -162,20 +180,29 @@ productApi.MapDelete("/deletebyid/{id:int}", async (int id, MarketplaceDbContext
 productApi.MapGet("/getbyid/{id:int}", async (int id, MarketplaceDbContext context) =>
 {
     var product = await context.Products
-    .Include(x => x.Seller)
-    .FirstAsync(x => x.ProductId == id);
-    return product is null ? Results.NotFound() : Results.Ok(product);
+        .Include(x => x.Categories)
+        .Include(x => x.Users).ThenInclude(x => x.Roles)
+        .FirstOrDefaultAsync(x => x.Id == id);
+    return product is null ? Results.NotFound() : Results.Ok(product.MapToDto());
 });
 
 productApi.MapGet("/{id:int}/reviews", async (int id, MarketplaceDbContext context) =>
 {
-    var reviews = await context.Reviews.Where(x => x.ProductId == id).ToListAsync();
-    return Results.Ok(reviews);
+    var reviews = await context.Reviews
+        .Include(x => x.Product).ThenInclude(x => x!.Categories)
+        .Include(x => x.User).ThenInclude(x => x!.Roles)
+        .Where(x => x.ProductId == id)
+        .ToListAsync();
+    return Results.Ok(reviews.Select(x => x.MapToDto()));
 });
 
-productApi.MapPost("/update", async (Product productModel, MarketplaceDbContext context) =>
+productApi.MapPost("/update", async (ProductDto productModel, MarketplaceDbContext context) =>
 {
-    var product = await context.Products.FindAsync(productModel.ProductId);
+    var category = await context.Categories.FindAsync(productModel.CategoryId);
+    var product = await context.Products
+        .Include(x => x.Categories)
+        .Include(x => x.Users).ThenInclude(x => x.Roles)
+        .FirstOrDefaultAsync(x => x.Id == productModel.Id);
     if (product is null) return Results.NotFound();
 
     product.Name = productModel.Name.Trim();
@@ -183,12 +210,12 @@ productApi.MapPost("/update", async (Product productModel, MarketplaceDbContext 
     product.Price = productModel.Price;
     product.StockQuantity = productModel.StockQuantity;
     product.ImageUrl = productModel.ImageUrl?.Trim();
-    product.CategoryId = productModel.CategoryId;
+    product.Categories = new List<Category> { category!, };
 
     try
     {
         await context.SaveChangesAsync();
-        return Results.Ok(product);
+        return Results.Ok(product.MapToDto());
     }
     catch (DbUpdateException e)
     {
@@ -200,23 +227,29 @@ productApi.MapPost("/update", async (Product productModel, MarketplaceDbContext 
 productApi.MapGet("/getall", async (MarketplaceDbContext context) =>
 {
     var products = await context.Products
-        .Where(x => x.UpdatedAt != null)
-        .Include(x => x.Category)
-        .Include(x => x.Seller)
+        .Include(x => x.Categories)
+        .Include(x => x.Users).ThenInclude(x => x.Roles)
         .ToListAsync();
-    return Results.Ok(products);
+    return Results.Ok(products.Select(x => x.MapToDto()));
 });
 
 // Order.
-orderApi.MapPut("/create", async (Order orderModel, MarketplaceDbContext context) =>
+orderApi.MapPut("/create", async (OrderDto orderModel, MarketplaceDbContext context) =>
 {
-    orderModel.OrderDate = DateTime.UtcNow;
+    var order = new Order
+    {
+        UserId = orderModel.UserId,
+        ProductId = orderModel.ProductId,
+        TotalQuantity = orderModel.TotalQuantity,
+        TotalAmount = orderModel.TotalAmount,
+        CreateTime = DateTime.UtcNow,
+    };
 
     try
     {
-        context.Orders.Add(orderModel);
+        context.Orders.Add(order);
         await context.SaveChangesAsync();
-        return Results.Json(orderModel, statusCode: StatusCodes.Status201Created);
+        return Results.Json(order.MapToDto(), statusCode: StatusCodes.Status201Created);
     }
     catch (DbUpdateException e)
     {
@@ -246,12 +279,12 @@ orderApi.MapDelete("/deletebyid/{id:int}", async (int id, MarketplaceDbContext c
 orderApi.MapGet("/getbyid/{id:int}", async (int id, MarketplaceDbContext context) =>
 {
     var order = await context.Orders.FindAsync(id);
-    return order is null ? Results.NotFound() : Results.Ok(order);
+    return order is null ? Results.NotFound() : Results.Ok(order.MapToDto());
 });
 
-orderApi.MapPost("/update", async (Order orderModel, MarketplaceDbContext context) =>
+orderApi.MapPost("/update", async (OrderDto orderModel, MarketplaceDbContext context) =>
 {
-    var order = await context.Orders.FindAsync(orderModel.OrderId);
+    var order = await context.Orders.FindAsync(orderModel.Id);
     if (order is null) return Results.NotFound();
 
     order.TotalQuantity = orderModel.TotalQuantity;
@@ -260,7 +293,7 @@ orderApi.MapPost("/update", async (Order orderModel, MarketplaceDbContext contex
     try
     {
         await context.SaveChangesAsync();
-        return Results.Ok(order);
+        return Results.Ok(order.MapToDto());
     }
     catch (DbUpdateException e)
     {
@@ -272,21 +305,27 @@ orderApi.MapPost("/update", async (Order orderModel, MarketplaceDbContext contex
 orderApi.MapGet("/getall", async (int userId, MarketplaceDbContext context) =>
 {
     var orders = await context.Orders.Where(x => x.UserId == userId).ToListAsync();
-    return Results.Ok(orders);
+    return Results.Ok(orders.Select(x => x.MapToDto()));
 });
 
 // Review.
-reviewApi.MapPut("/create", async (Review reviewModel, MarketplaceDbContext context) =>
+reviewApi.MapPut("/create", async (ReviewDto reviewModel, MarketplaceDbContext context) =>
 {
-    reviewModel.CreatedAt = DateTime.UtcNow;
-    reviewModel.Comment = reviewModel.Comment.Trim();
-    reviewModel.ImageUrl = reviewModel.ImageUrl?.Trim();
+    var review = new Review
+    {
+        CreatedAt = DateTime.UtcNow,
+        Comment = reviewModel.Comment,
+        ImageUrl = reviewModel.ImageUrl,
+        ProductId = reviewModel.ProductId,
+        UserId = reviewModel.UserId,
+        Rating = reviewModel.Rating,
+    };
 
     try
     {
-        context.Reviews.Add(reviewModel);
+        context.Reviews.Add(review);
         await context.SaveChangesAsync();
-        return Results.Json(reviewModel, statusCode: StatusCodes.Status201Created);
+        return Results.Json(review.MapToDto(), statusCode: StatusCodes.Status201Created);
     }
     catch (DbUpdateException e)
     {
@@ -316,21 +355,21 @@ reviewApi.MapDelete("/deletebyid/{id:int}", async (int id, MarketplaceDbContext 
 reviewApi.MapGet("/getbyid/{id:int}", async (int id, MarketplaceDbContext context) =>
 {
     var review = await context.Reviews.FindAsync(id);
-    return review is null ? Results.NotFound() : Results.Ok(review);
+    return review is null ? Results.NotFound() : Results.Ok(review.MapToDto());
 });
 
-reviewApi.MapPost("/update", async (Review reviewModel, MarketplaceDbContext context) =>
+reviewApi.MapPost("/update", async (ReviewDto reviewModel, MarketplaceDbContext context) =>
 {
-    var review = await context.Reviews.FindAsync(reviewModel.ReviewId);
+    var review = await context.Reviews.FindAsync(reviewModel.Id);
     if (review is null) return Results.NotFound();
 
-    review.Comment = reviewModel.Comment.Trim();
-    review.ImageUrl = reviewModel.ImageUrl?.Trim();
+    review.Comment = reviewModel.Comment;
+    review.ImageUrl = reviewModel.ImageUrl;
 
     try
     {
         await context.SaveChangesAsync();
-        return Results.Ok(review);
+        return Results.Ok(review.MapToDto());
     }
     catch (DbUpdateException e)
     {
@@ -342,20 +381,23 @@ reviewApi.MapPost("/update", async (Review reviewModel, MarketplaceDbContext con
 reviewApi.MapGet("/getall", async (MarketplaceDbContext context) =>
 {
     var reviews = await context.Reviews.ToListAsync();
-    return Results.Ok(reviews);
+    return Results.Ok(reviews.Select(x => x.MapToDto()));
 });
 
 // Category.
-categoryApi.MapPut("/create", async (Category categoryModel, MarketplaceDbContext context) =>
+categoryApi.MapPut("/create", async (CategoryDto categoryModel, MarketplaceDbContext context) =>
 {
-    categoryModel.Name = categoryModel.Name.Trim();
-    categoryModel.Description = categoryModel.Description?.Trim();
+    var category = new Category
+    {
+        Name = categoryModel.Name,
+        Description = categoryModel.Description,
+    };
 
     try
     {
-        context.Categories.Add(categoryModel);
+        context.Categories.Add(category);
         await context.SaveChangesAsync();
-        return Results.Ok(context);
+        return Results.Ok(category.MapToDto());
     }
     catch (DbUpdateException e)
     {
@@ -367,21 +409,21 @@ categoryApi.MapPut("/create", async (Category categoryModel, MarketplaceDbContex
 categoryApi.MapDelete("/getbyid/{id:int}", async (int id, MarketplaceDbContext context) =>
 {
     var category = await context.Categories.FindAsync(id);
-    return category is null ? Results.NotFound() : Results.Ok(category);
+    return category is null ? Results.NotFound() : Results.Ok(category.MapToDto());
 });
 
-categoryApi.MapPost("/update", async (Category categoryModel, MarketplaceDbContext context) =>
+categoryApi.MapPost("/update", async (CategoryDto categoryModel, MarketplaceDbContext context) =>
 {
-    var category = await context.Categories.FindAsync(categoryModel.CategoryId);
+    var category = await context.Categories.FindAsync(categoryModel.Id);
     if (category is null) return Results.NotFound();
 
-    category.Name = categoryModel.Name.Trim();
-    category.Description = categoryModel.Description?.Trim();
+    category.Name = categoryModel.Name;
+    category.Description = categoryModel.Description;
 
     try
     {
         await context.SaveChangesAsync();
-        return Results.Ok(category);
+        return Results.Ok(category.MapToDto());
     }
     catch (DbUpdateException e)
     {
@@ -411,21 +453,19 @@ categoryApi.MapGet("/deletebyid/{id:int}", async (int id, MarketplaceDbContext c
 categoryApi.MapGet("/getall", async (MarketplaceDbContext context) =>
 {
     var categories = await context.Categories.ToListAsync();
-    return Results.Ok(categories);
+    return Results.Ok(categories.Select(x => x.MapToDto()));
 });
 
 // Cart.
 cartApi.MapPost("/add-product", async (int userId, int productId, MarketplaceDbContext context) =>
 {
-    var item = new UserHasProductInWishlist
-    {
-        UserId = userId,
-        ProductId = productId,
-    };
+    var user = await context.Users.Include(x => x.ProductsNavigation).FirstOrDefaultAsync(x => x.Id == userId);
+    var product = await context.Products.FindAsync(productId);
+    if (user is null || product is null) return Results.NotFound();
 
     try
     {
-        context.UserHasProductInWishlist.Add(item);
+        user.ProductsNavigation.Add(product);
         await context.SaveChangesAsync();
         return Results.Ok();
     }
@@ -438,14 +478,13 @@ cartApi.MapPost("/add-product", async (int userId, int productId, MarketplaceDbC
 
 cartApi.MapPost("/remove-product", async (int userId, int productId, MarketplaceDbContext context) =>
 {
-    var item = await context.UserHasProductInWishlist
-        .Where(x => x.UserId == userId && x.ProductId == productId)
-        .FirstOrDefaultAsync();
-    if (item is null) return Results.NotFound();
+    var user = await context.Users.Include(x => x.ProductsNavigation).FirstOrDefaultAsync(x => x.Id == userId);
+    var product = await context.Products.FindAsync(productId);
+    if (user is null || product is null) return Results.NotFound();
 
     try
     {
-        context.UserHasProductInWishlist.Remove(item);
+        user.ProductsNavigation.Remove(product);
         await context.SaveChangesAsync();
         return Results.Ok();
     }
@@ -458,12 +497,11 @@ cartApi.MapPost("/remove-product", async (int userId, int productId, Marketplace
 
 cartApi.MapGet("", async (int userId, MarketplaceDbContext context) =>
 {
-    var products = await (from cartItem in context.UserHasProductInWishlist
-        join product in context.Products on cartItem.ProductId equals product.ProductId
-        where cartItem.UserId == userId
-        select product).ToListAsync();
-
-    return Results.Ok(products);
+    var user = await context.Users
+        .Include(x => x.ProductsNavigation).ThenInclude(x => x.Categories)
+        .Include(x => x.ProductsNavigation).ThenInclude(x => x.Users).ThenInclude(x => x.Roles)
+        .FirstOrDefaultAsync(x => x.Id == userId);
+    return user is null ? Results.NotFound() : Results.Ok(user.ProductsNavigation.Select(x => x.MapToDto()));
 });
 
 // DB stuff.
@@ -471,7 +509,7 @@ using var scope = app.Services.CreateScope();
 await using var dbContext = scope.ServiceProvider.GetRequiredService<MarketplaceDbContext>();
 try
 {
-    await dbContext.Database.MigrateAsync();
+    await dbContext.Database.EnsureCreatedAsync();
 }
 catch
 {

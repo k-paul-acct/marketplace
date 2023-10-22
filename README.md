@@ -1,10 +1,12 @@
 # API for MarketplaceDB
+
 <ul>
 <li>Use the database dump script.sql to create the database.</li>
 <li>The API listens on localhost:8080 by default, and you can change this value in Program.cs (line 16)</li>
 </ul>
 
 ## Methods
+
 There Are 6 types of methods:
 <ul>
 <li>POST: for /updatebyid/id and /getbyfields </li>
@@ -14,6 +16,7 @@ There Are 6 types of methods:
 </ul>
 
 Examples
+
 ```json
 "User"
 {
